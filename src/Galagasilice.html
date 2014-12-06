@@ -1,0 +1,468 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>HTML5 Galagasilice </title>
+    </head>
+    <body>
+        <section>
+
+            <div>
+                <canvas id="canvas" width="800" height="500">
+                    This text is displayed if your browser does not support HTML5 Canvas.
+                </canvas>
+            </div>
+
+            <script type="text/javascript">
+                var canvas;
+                var ctx;
+                var dx = 5;
+                var dy = 5;
+                var x = 400;
+                var y = 300;
+                var WIDTH = 800
+                var HEIGHT = 500;
+                var up = false;
+                var down = false;
+                var left = false;
+                var right = false;
+                var space = false;
+                var bulletsX = [];
+                var bulletsY=[];
+                var bulletsFriend=[];
+                var enemyX = [];
+                var enemyY = [];
+                var enemyDX = [];
+                var upgradeX = [];
+                var upgradeY = [];
+                var currentUpgrades = [];
+                var score=0;
+                var interval;
+                var intervalEnemySpawn;
+                var start=false;
+                var dificulty=800;
+                var sheild=100;
+                var damage=100;
+                var sendAttack=false;
+                var doublescoretime=0;
+                canvas = document.getElementById("canvas");
+                ctx = canvas.getContext("2d");
+                var Fimg=new Image();
+                Fimg.src="FriendShipB.png";
+                var Eimg=new Image();
+                Eimg.src="EnemyB.png";
+                var Bimg=new Image();
+                Bimg.src="Bullet.png";
+                var Simg=new Image();
+                Simg.src="SheildB.png";
+                var Kimg=new Image();
+                Kimg.src="EliminateB.png";
+                var Timg=new Image();
+                Timg.src="x2.png";
+                var Backimg=new Image();
+                Backimg.src="background.png";
+                var Eximg=new Image();
+                Eximg.src="explosion.gif";
+                setInterval(draw,10);
+                var godmodes=0;
+                var escape=false;
+                
+                
+                    
+                function init(){
+                    dx = 5;
+                    dy = 5;
+                    x = 400;
+                    y = 300;
+                    lives=3;
+                    doublescoretime=0;
+                    up = false;
+                    down = false;
+                    left = false;
+                    right = false;
+                    space = false;
+                    bulletsX = [];
+                    bulletsY=[];
+                    bulletsFriend=[];
+                    enemyX = [];
+                    enemyY = [];
+                    enemyDX = [];
+                    upgradeX = [];
+                    upgradeY = [];
+                    upgradeType = [];
+                    currentUpgrades = [];
+                    start=false
+                    score=0;
+                    dificulty = 800;
+                    sheild=100;
+                    damage=100;
+                    sendAttack=false;
+                    godmodes=0;
+                    escape=false;
+                    alert("Press S to start, arrows to move, space to toggle gun, 1 for Eliminate");
+                }
+                
+                function addBullet(x,y,bool)
+                {
+                    bulletsX[bulletsX.length]=x;
+                    bulletsY[bulletsY.length]=y;
+                    bulletsFriend[bulletsFriend.length]=bool;
+                }
+                function addBulletsFriend(){
+                    addBullet(x+10,y-10,true);
+                }
+                function addRandEnemy()
+                {
+                    //if((Math.random()*1100)>=dificulty)
+                    addEnemy((Math.random()*700)+50,-100);
+                }
+                function addEnemy(x,y)
+                {
+                    //alert("adding");
+                    enemyX[enemyX.length]=x;
+                    enemyY[enemyY.length]=y;
+                    enemyDX[enemyX.length]=(Math.floor((Math.random()*2))-0.5)*8;
+                }
+                function drawUpgrades()
+                {
+                    for(var i = 0;i<upgradeX.length;i++)
+                    {
+                        //alert(""+upgradeType[i]);
+                        if(upgradeType[i]==0)
+                        {
+                            ctx.drawImage(Simg,upgradeX[i],upgradeY[i]);
+                        }
+                        if(upgradeType[i]==1)
+                        {
+                            //alert("drawing")
+                            ctx.drawImage(Kimg,upgradeX[i],upgradeY[i]);
+                        }
+                        if(upgradeType[i]==2)
+                        {
+                            ctx.drawImage(Timg,upgradeX[i],upgradeY[i]);
+                        }
+                        upgradeY[i]+=3;
+                        if(upgradeY[i]>500)
+                        {
+                            upgradeX.splice(i,1);
+                            upgradeY.splice(i,1);
+                            upgradeType.splice(i,1);
+                        }
+                    }
+                }
+                function drawEnemys()
+                {
+                    for(var i=0;i<enemyX.length;i++)
+                    {
+                        ctx.drawImage(Eimg,enemyX[i],enemyY[i]);
+                        if(enemyX[i]>790){
+                            enemyDX[i]=-4;
+                        }
+                        else if (enemyX[i]<10){
+                            enemyDX[i]=4;
+                        }
+                        
+                            
+                        enemyY[i]+=2;
+                        enemyX[i]+=enemyDX[i];
+                        if(Math.random()*100<2.5)
+                        {
+                            addBullet(enemyX[i]+10,enemyY[i]+20,false);
+                        }
+                    }
+                }
+                
+                function distance(x1,y1,x2,y2){
+                    return Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+                }
+                
+                function contact(x,y)
+                {
+                    for(var i=0;i<bulletsX.length;i++)
+                    {
+                        if(!bulletsFriend[i]&&distance(bulletsX[i],bulletsY[i],x+10,y+10)<20){
+                            sheild-=20;
+                            if(sheild<=0){
+                                ctx.drawImage(Eximg,x-10,y);
+                                alert("Score: "+score);
+                                window.clearInterval(intervalEnemySpawn);
+                                window.clearInterval(interval);
+                                init();
+                            }
+                            else {
+                                //sheild-=40;
+                                bulletsX.splice(i,1);
+                                bulletsY.splice(i,1);
+                                bulletsFriend.splice(i,1);
+                                i--;
+                            }
+                        }
+                        for(var j=0;j<enemyX.length;j++)
+                        {
+                            if(bulletsFriend[i]&&distance(bulletsX[i],bulletsY[i],enemyX[j]+10,enemyY[j]+10)<20)
+                            {
+                                ctx.drawImage(Eximg,enemyX[j]-10,enemyY[j]);
+                                if(Math.random()*100<30)
+                                {
+                                    upgradeX[upgradeX.length]=enemyX[j];
+                                    upgradeY[upgradeY.length]=enemyY[j];
+                                    var tempRand=Math.floor(Math.random()*100);
+                                    if(tempRand<=80)
+                                    {
+                                        upgradeType[upgradeType.length]=0;
+                                    }
+                                    if(tempRand>80 && tempRand<=90)
+                                    {
+                                        upgradeType[upgradeType.length]=1;
+                                    }
+                                    if(tempRand>90)
+                                    {
+                                        upgradeType[upgradeType.length]=2;
+                                    }
+                                }
+                                enemyX.splice(j,1);
+                                enemyY.splice(j,1);
+                                enemyDX.splice(j,1);
+                                bulletsX.splice(i,1);
+                                bulletsY.splice(i,1);
+                                bulletsFriend.splice(i,1);
+                                score+=100;
+                                if(doublescoretime>0) score+=100;
+                                i--;
+                                j--;
+                                if(dificulty>100)
+                                {
+                                    dificulty-=15;
+                                }
+                                window.clearInterval(intervalEnemySpawn);
+                                intervalEnemySpawn=setInterval(addRandEnemy,dificulty);
+                            }
+                        }
+                    }
+                    for(var i=0;i<upgradeX.length;i++)
+                    {
+                        if(distance(upgradeX[i],upgradeY[i],x,y)<20)
+                        {
+                            //alert("contact");
+                            currentUpgrades[currentUpgrades.length]=upgradeType[i];
+                            upgradeX.splice(i,1);
+                            upgradeY.splice(i,1);
+                            upgradeType.splice(i,1);
+                            i--;
+                        }
+                    }
+                }
+                
+                function processUpgrades()
+                {
+                    for(var i=0;i<currentUpgrades.length;i++)
+                    {
+                        if(currentUpgrades[i]==0)
+                        {
+                            //alert("fixing");
+                            sheild=100;
+                        }
+                        if(currentUpgrades[i]==1){
+                            godmodes++;
+                        }
+                        if(currentUpgrades[i]==2){
+                            doublescoretime+=1000;
+                        }
+                    }
+                    currentUpgrades=[];
+                }
+                
+                function drawBullets()
+                {
+                    for(var i=0;i<bulletsX.length;i++)
+                    {
+                        //ctx.drawImage(Bimg,bulletsX[i],bulletsY[i]);
+                        circle(bulletsX[i],bulletsY[i],7);
+                    }
+                    for(var i=0;i<bulletsX.length;i++){
+                        if(bulletsFriend[i])bulletsY[i]-=1.5*dy;
+                        else bulletsY[i]+=dy;
+                    }
+                    for(var i=0;i<bulletsX.length;i++){
+                        if(bulletsY[i]<0||bulletsY[i]>500){
+                            bulletsX.splice(i,1);
+                            bulletsY.splice(i,1);
+                            bulletsFriend.splice(i,1);
+                        }
+                    }
+                }
+                
+                function circle(x,y,r) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI*2, true);
+                    ctx.fill();
+                }
+
+                function rect(x,y,w,h) {
+                    ctx.beginPath();
+                    ctx.rect(x,y,w,h);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                function doKeyUp(evt){
+                    switch (evt.keyCode) {
+                        case 38:  /* Up arrow was released*/
+                            up = false;
+                            break;
+                        case 40:  /* Down arrow was released*/
+                            down = false;
+                            break;
+                        case 37:  /* Left arrow was released*/
+                            left = false;
+                            break;
+                        case 39:  /* Right arrow was released*/
+                            right = false;
+                            break;
+                        case 32: 
+                            //space=false;
+                            //window.clearInterval(interval);
+                    
+                            break;
+                        
+                    }
+                }
+            
+
+                function doKeyDown(evt){
+                    switch (evt.keyCode) {
+                        case 38:  /* Up arrow was pressed */
+                            up = true;
+                            break;
+                        case 40:  /* Down arrow was pressed */
+                            down = true;
+                            break;
+                        case 37:  /* Left arrow was pressed */
+                            left = true;
+                            break;
+                        case 39:  /* Right arrow was pressed */
+                            right = true;
+                            break;
+                        case 32:
+                            //if(!space)
+                            //{
+                            //addBulletsFriend();
+                            //interval=setInterval(addBulletsFriend,damage);
+                            //}
+                            //space=true;
+                            if(space==false)
+                            {
+                                interval=setInterval(addBulletsFriend,damage);
+                                space=true;
+                            }
+                            else if(space==true)
+                            {
+                                window.clearInterval(interval);
+                                space=false;
+                            }
+                            break;
+                        case  83:
+                            if(!start){
+                                intervalEnemySpawn=setInterval(addRandEnemy,dificulty);
+                                start=true;
+                            }
+                            break;
+                        case 192:
+                            clearInterval(intervalEnemySpawn)
+                            intervalEnemySpawn=setInterval(addRandEnemy,-1);
+                            break;
+                        case 46:
+                            if(damage==100)
+                            {
+                                damage=1;
+                            }
+                            else if(damage==1)
+                            {
+                                damage=100;
+                            }
+                            break;
+                        case 49:
+                            if(godmodes>0)
+                            {
+                                godmodes--;
+                                for(var j=0;j<800;j+=5)
+                                {
+                                    addBullet(j,495,true);
+                                }
+                            }
+                            break;
+                        /*case 27:
+                            if(escape==false)
+                            {
+                                escape=true;
+                                pause();
+                                
+                            }
+                            else if(escape==true)
+                            {
+                                escape=false;
+                            }
+                                    
+                            break;*/
+                                
+                    }
+                }
+                
+                /*function pause()
+                {
+                    while(escape==true)
+                    {
+                        doKeyDown();
+                        //window.addEventListener('keydown',doKeyDown,true);
+                        //window.addEventListener('keyup',doKeyUp, true);
+                    }
+                }*/
+                
+                function draw() {
+                    if(sheild<100)
+                    {
+                        sheild+=0.05;
+                    }
+                    ctx.fillStyle = "white";
+                    ctx.strokeStyle = "black";
+                    //rect(0,0,WIDTH,HEIGHT); //clears the screen\
+                    ctx.drawImage(Backimg,0,0);
+                    
+                    
+                    
+                    //ctx.fillStyle = "purple";
+                    if (up == true && y - dy > 0) y-=dy;
+                    if (down == true && y + dy < HEIGHT) y+=dy;
+                    if (left == true && x - dx > 0) x-=dx;
+                    if (right == true && x + dx < WIDTH) x+=dx;
+                
+                    ctx.drawImage(Fimg,x,y);
+                    
+                    if(doublescoretime>0) doublescoretime-=1;
+                    
+                    ctx.fillStyle="#FF0000";
+                    drawEnemys();
+                    contact(x,y);
+                    drawUpgrades();
+                    processUpgrades();
+                    ctx.fillStyle = "#00FF00";
+                    drawBullets();
+                    ctx.fillStyle="white";
+                    ctx.fillText("Shield: ",10,30);
+                    ctx.fillText("Score: "+score,10,10);
+                    ctx.fillText("Spawn delay: "+dificulty/1000,10,20);
+                    ctx.fillText("Number of Eliminate: "+godmodes,10,90);
+                    ctx.fillText("Double Points! "+doublescoretime/100 + " sec",10,100);
+                    ctx.fillStyle="blue";
+                    ctx.fillRect(10,35,sheild+10,10);
+                    
+                }
+                
+                init();
+                window.addEventListener('keydown',doKeyDown,true);
+                window.addEventListener('keyup',doKeyUp, true);
+            </script>
+        </section>
+    </body>
+</html>
